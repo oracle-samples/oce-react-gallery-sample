@@ -9,9 +9,9 @@ When filing a bug remember that the better written the bug is, the more likely i
 to be fixed. Please include:
 
 1. The browser you're using
-3. OS
-4. The version of Oracle Content and Experience Cloud you're connecting to
-5. Steps to reproduce
+2. OS
+3. The version of Oracle Content and Experience Cloud you're connecting to
+4. Steps to reproduce
 
 ## Code
 
