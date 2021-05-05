@@ -1,4 +1,4 @@
-# Aboutr React Image Gallery Sample
+# About React Image Gallery Sample
 
 This repository holds the sample source code for a ReactJS implementation of an image gallery site powered by Oracle Content and Experience.
 
