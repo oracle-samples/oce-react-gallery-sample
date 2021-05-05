@@ -52,7 +52,7 @@ a {
   text-align:center;
 }
 .error {
-  color: gray;
+  color: #757575;
   font-size: 1.5em;
   text-align: center;
   margin-top: 50px;
@@ -134,7 +134,7 @@ a {
 
 /* Styles for the images
  ****************************************************************/
-.item img {
+.item picture{
   /* The float left is needed to stretch the image to the size of the container in chrome*/
   float:left;
   width:100%;
@@ -146,10 +146,12 @@ a {
   object-fit: contain;
 }
 .cover {
+  width:100%;
+  height:100%;
   -o-object-fit: cover;
   object-fit: cover;
 }
-.item:first-child img{
+.item:first-child picture{
   height:130px;
 }
 .caption {
@@ -157,8 +159,12 @@ a {
   text-align: center;
   padding: 8px;
 }
-.caption h4 {
-  color:gray;
+.caption h2 {
+  font-size: 1.17em;
+}
+.caption h3 {
+  font-size: 1em;
+  color:#757575;
 }
 .page-container {
   width:100%;
@@ -274,8 +280,9 @@ a {
 }
 .subheading {
   text-align: center;
-  color:rgb(115, 115, 115);
+  color:#757575;
   padding:4px 0 12px;
+  font-size: 1.17em;
 }
 .grid {
   width:98%;
@@ -284,7 +291,7 @@ a {
   align-content: center;
   display: grid;
   -ms-grid-columns: 1fr 1fr 1fr;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
   grid-gap: 4px;
 }
 .grid-item {
@@ -301,6 +308,13 @@ a {
   height: 100%;
   -o-object-fit: cover;
   object-fit: cover;
+}
+
+/* For phones reduce the grid min width even further so thumbnails are downloaded */
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
 }
 
 /* Use two columns if max width is 850px */
@@ -320,13 +334,6 @@ a {
     -ms-grid-columns: auto;
     grid-template-columns: auto;
   }
-  /* Make the image a little taller when its only 1 column*/
-  .item:first-child img{
-    height:170px;
-  }
-  .item img{
-    height:100px;
-  }
   .page-container {
     background: rgba(0, 0, 0, 0);
   }
@@ -341,6 +348,9 @@ a {
     max-width: 100%;
     -o-object-fit: contain;
     object-fit: contain;
+  }
+  .home {
+    display: none;
   }
 }
 

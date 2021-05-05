@@ -1,8 +1,9 @@
-/* eslint-disable no-param-reassign */
 /**
  * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
+/* eslint-disable no-param-reassign */
+
 import getDeliveryClient from './server-config-utils';
 
 /**
@@ -18,16 +19,84 @@ import getDeliveryClient from './server-config-utils';
  * Utility method to log an error.
  */
 function logError(message, error) {
-  if (error && error.statusMessage) {
+  if (error && typeof error.statusMessage) {
     console.log(`${message} : `, error.statusMessage);
-  } else if (error.error && error.error.code && error.error.code === 'ETIMEDOUT') {
-    console.log(`${message} : `, error);
-  } else if (error.error && error.error.code) {
-    console.log(`${message} : `, error.error.code);
   } else if (error) {
-    console.error(message, error);
+    console.log(message);
   }
 }
+
+/**
+ * Flattens an array of arrays into a single array.
+ *
+ * Note:  ES6's array.flat() is not supported in Node pre version 11 so flatten manually.
+ *
+ * @param {Array} inArray - the array of arrays to flatten
+ * @param {Array} result - the flattened array
+ */
+function flattenArray(inArray, result = []) {
+  for (let i = 0, { length } = inArray; i < length; i += 1) {
+    const arrayElement = inArray[i];
+    if (Array.isArray(arrayElement)) {
+      flattenArray(arrayElement, result);
+    } else {
+      result.push(arrayElement);
+    }
+  }
+  return result;
+}
+
+/**
+ * Private method for adding the specified format rendition to the rendition string
+ *
+ * @param {Object} url - the url which contains the rendition strings
+ * @param {Object} rendition - the rendition field of the content sdk json object
+ * @param {String} formatstr - the format string type - either webp or jpg
+ */
+function addRendition(urls, rendition, formatstr) {
+  // Get the webp format field
+  const format = rendition.formats.filter((item) => item.format === `${formatstr}`)[0];
+  const self = format.links.filter((item) => item.rel === 'self')[0];
+  const url = self.href;
+  const { width } = format.metadata;
+
+  // Also save the jpg format so that it can be used as a default value for images
+  if (formatstr === 'jpg') {
+    urls[rendition.name.toLowerCase()] = url;
+    urls.jpgSrcset += `${url} ${width}w,`;
+  } else {
+    urls.srcset += `${url} ${width}w,`;
+  }
+}
+
+/**
+ * Retrieve the sourceset for an asset that is constructed from the rendition
+ *
+ * @param {asset} client - the asset whose fields contain the various renditions
+ * @returns {Object} - An Object containing the the sourceset as well as individual rendition
+ * url that can be used as default src
+ */
+function getSourceSet(asset) {
+  const urls = {};
+  urls.srcset = '';
+  urls.jpgSrcset = '';
+  if (asset.fields && asset.fields.renditions) {
+    asset.fields.renditions.forEach((rendition) => {
+      addRendition(urls, rendition, 'jpg');
+      addRendition(urls, rendition, 'webp');
+    });
+  }
+  // add the native rendition to the srcset as well
+  urls.srcset += `${asset.fields.native.links[0].href} ${asset.fields.metadata.width}w`;
+  urls.native = asset.fields.native.links[0].href;
+  urls.width = asset.fields.metadata.width;
+  urls.height = asset.fields.metadata.height;
+  return urls;
+}
+
+/* ----------------------------------------------------
+ * APIs to get the data for the Home Page
+ * ---------------------------------------------------- */
 
 /**
  * Fetch the items that belong to the category whose id is specified.
@@ -39,19 +108,15 @@ function logError(message, error) {
  * @returns {Promise({Object})} - A Promise containing the data
  */
 function fetchItemsForCategory(client, categoryId, limit) {
-  return client.getItems({
-    q: `(taxonomies.categories.nodes.id eq "${categoryId}")`,
-    fields: 'all',
-    expand: 'all',
-    limit: limit ? 4 : 100,
-    totalResults: true,
-  }).then((topLevelItem) => topLevelItem)
+  return client
+    .getItems({
+      q: `(taxonomies.categories.nodes.id eq "${categoryId}" AND type eq "Image")`,
+      limit: limit ? 4 : 100,
+      totalResults: true,
+    })
+    .then((topLevelItem) => topLevelItem)
     .catch((error) => logError('Fetching items for category failed', error));
 }
-
-/* ----------------------------------------------------
- * APIs to get the data for the Home Page
- * ---------------------------------------------------- */
 
 /**
  * Fetch the categories for the specified taxonomyId.
@@ -61,9 +126,11 @@ function fetchItemsForCategory(client, categoryId, limit) {
  * @returns {Promise({Object})} - A Promise containing the data
  */
 function fetchCategoriesForTaxonomyId(client, taxonomyId) {
-  return client.queryTaxonomyCategories({
-    id: `${taxonomyId}`,
-  }).then((topLevelItem) => topLevelItem)
+  return client
+    .queryTaxonomyCategories({
+      id: `${taxonomyId}`,
+    })
+    .then((topLevelItem) => topLevelItem)
     .catch((error) => logError('Fetching categories for taxonomy failed', error));
 }
 
@@ -74,7 +141,8 @@ function fetchCategoriesForTaxonomyId(client, taxonomyId) {
  * @returns {Promise({Object})} - A Promise containing the data
  */
 function fetchAllTaxonomiesCategories(client) {
-  return client.getTaxonomies()
+  return client
+    .getTaxonomies()
     .then((topLevelItem) => {
       const taxonomyIds = topLevelItem.items.map((taxonomy) => taxonomy.id);
 
@@ -93,8 +161,9 @@ function fetchAllTaxonomiesCategories(client) {
       // of the categories for all of the taxonomies (note: no taxonomy information)
       // is returned.
       return Promise.all(promises)
-        .then((arrayOfCategoryArray) => arrayOfCategoryArray.flat());
-    }).catch((error) => logError('Fetching taxonomies failed', error));
+        .then((arrayOfCategoryArray) => flattenArray(arrayOfCategoryArray));
+    })
+    .catch((error) => logError('Fetching taxonomies failed', error));
 }
 
 /**
@@ -114,115 +183,33 @@ function addItemsToCategories(client, categories) {
     // add a promise to the total list of promises to get the items
     // for the specific category
     promises.push(
-      fetchItemsForCategory(client, category.id, true)
-        .then((topLevelItem) => {
-        // add the item to the category before returning it
+      fetchItemsForCategory(client, category.id, true).then(
+        (topLevelItem) => {
+          // add the item to the category before returning it
           category.items = topLevelItem.items;
           category.totalResults = topLevelItem.totalResults;
           // Note: the spread operator is used here so that we return a top level
           // object, rather than a value which contains the object
           // i.e we return
           //   {
-          //     field1: 'value', field2 : "value", etc
+          //     field1: 'value', field2 : 'value', etc
           //   },
           // rather than
           //   {
           //     name: {
-          //             field1: 'value', field2 : "value", etc
+          //             field1: 'value', field2 : 'value', etc
           //           }
           //    }
           return {
             ...category,
           };
-        }),
+        },
+      ),
     );
   });
 
   // execute all the promises before returning the data
-  return Promise.all(promises)
-    .then((arrayOfItems) => arrayOfItems.flat());
-}
-
-/**
- * Return the thumbnail URL for the specified item.
- *
- * @param {DeliveryClient} client - the delivery client to get data from OCE content
- * @param {string} identifier - the item id whose thumbnail URL is to be obtained
- * @returns {Promise({Object})} - A Promise containing the data
- */
-function retrieveThumbnailURL(client, identifier) {
-  return client.getItem({
-    id: identifier,
-    fields: 'all',
-    expand: 'all',
-  }).then((asset) => {
-    let url = null;
-    if (asset.fields && asset.fields.renditions) {
-      const object = asset.fields.renditions.filter((item) => item.name === 'Thumbnail')[0];
-      const format = object.formats.filter((item) => item.format === 'jpg')[0];
-      const self = format.links.filter((item) => item.rel === 'self')[0];
-      url = self.href;
-    }
-    return url;
-  }).catch((error) => logError('Fetching thumbnail URL failed', error));
-}
-
-/**
- * Return the thumbnail URLs for all of the specified items, returning a map
- * of itemId to thumbnail URL.
- *
- * @param {DeliveryClient} client - the delivery client to get data from OCE content
- * @param {Array} items - the array of items whose thumbnail URLs are to be obtained
- * @returns {Promise({Object})} - A Promise containing the data
- */
-function fetchItemsThumbnailURLs(client, items) {
-  const promises = [];
-  // loop over each image
-  items.forEach((item) => {
-    // add a promise to the total list of promises to get the url
-    // for the specific image
-    const itemId = item.id;
-    promises.push(
-      retrieveThumbnailURL(client, itemId)
-        .then((url) => ({ itemId, url })),
-    );
-  });
-
-  // execute all the promises before returning all of the data in a single map
-  return Promise.all(promises)
-    .then((allUrls) => {
-      const flatArray = allUrls.flat();
-      const allUrlsMap = new Map(flatArray.map((i) => [i.itemId, i.url]));
-      return allUrlsMap;
-    });
-}
-
-/**
- * Retrieve the rendition URLs for the specified item.
- *
- * @param {DeliveryClient} client - the delivery client to get data from OCE content
- * @param {string} identifier - the item id whose rendition URLs are to be obtained
- * @returns {Promise({Object})} - A Promise containing the data
- */
-function retrieveRenditionURLs(client, identifier) {
-  return client.getItem({
-    id: identifier,
-    fields: 'all',
-    expand: 'all',
-  }).then((asset) => {
-    const urls = {};
-    if (asset.fields && asset.fields.renditions) {
-      asset.fields.renditions.forEach((rendition) => {
-        const { name } = rendition;
-        const format = rendition.formats.filter((item) => item.format === 'jpg')[0];
-        const self = format.links.filter((item) => item.rel === 'self')[0];
-        const url = self.href;
-        urls[name] = url;
-      });
-    }
-    urls.Native = asset.fields.native.links[0].href;
-    return urls;
-  }).catch((error) => logError('Fetching rendition URLs failed', error));
+  return Promise.all(promises).then((arrayOfItems) => flattenArray(arrayOfItems));
 }
 
 /**
@@ -237,15 +224,21 @@ function retrieveRenditionURLs(client, identifier) {
 export function getHomePageData() {
   const deliveryClient = getDeliveryClient();
   // get the categories for all taxonomies then add all the category items to each category
-  return fetchAllTaxonomiesCategories(deliveryClient)
-    .then((initialCategories) => addItemsToCategories(deliveryClient, initialCategories)
-      .then((categories) => {
-        // pull out all of the items for all of the categories then get the items thumbnail urls
+  return fetchAllTaxonomiesCategories(deliveryClient).then(
+    (initialCategories) => addItemsToCategories(deliveryClient, initialCategories).then(
+      (categories) => {
+        // pull out all of the items for all of the categories then
+        // append the computed renditionUrls to each item.
         const allItems = categories.map((category) => category.items);
-
-        return fetchItemsThumbnailURLs(deliveryClient, allItems.flat())
-          .then((itemsThumbnailURLMap) => ({ categories, itemsThumbnailURLMap }));
-      }));
+        const items = flattenArray(allItems);
+        // for each item, retrieve the rendition urls and add it to the item
+        items.forEach((item) => {
+          item.renditionUrls = getSourceSet(item);
+        });
+        return { categories };
+      },
+    ),
+  );
 }
 
 /* ----------------------------------------------------
@@ -259,36 +252,23 @@ export function getHomePageData() {
  *   count of the total number of categories,
  *   list of category items for the category with all their rendition URLS.
  *
- * @param {Object} client - the delivery client
  * @param {string} categoryId - the id of the category whose items are to be obtained
  * @returns {Promise({Object})} - A Promise containing the data
  */
 export function getImageGridPageData(categoryId) {
   const client = getDeliveryClient();
 
-  return fetchItemsForCategory(client, categoryId, false)
-    .then((topLevelItem) => {
+  return fetchItemsForCategory(client, categoryId, false).then(
+    (topLevelItem) => {
       const { totalResults } = topLevelItem;
-      const promises = [];
       // for each item, retrieve the rendition urls and add it to the item
       topLevelItem.items.forEach((item) => {
-        promises.push(
-          retrieveRenditionURLs(client, item.id)
-            .then((renditionUrls) => {
-              item.renditionUrls = renditionUrls;
-              // see comment in 'fetchAllCategoryItems' why the spread operator is being used
-              return {
-                ...item,
-              };
-            }),
-        );
+        item.renditionUrls = getSourceSet(item);
       });
-
-      // execute all the promises before returning the data
-      return Promise.all(promises)
-        .then((arrayOfItems) => ({
-          totalResults,
-          items: arrayOfItems.flat(),
-        }));
-    });
+      return {
+        totalResults,
+        items: topLevelItem.items,
+      };
+    },
+  );
 }

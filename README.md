@@ -1,4 +1,4 @@
-# Image Gallery - React
+# Aboutr React Image Gallery Sample
 
 This repository holds the sample source code for a ReactJS implementation of an image gallery site powered by Oracle Content and Experience.
 
@@ -48,11 +48,19 @@ and then open <http://localhost:8080>.
 
 Sample images may be downloaded from [https://www.oracle.com/middleware/technologies/content-experience-downloads.html](https://www.oracle.com/middleware/technologies/content-experience-downloads.html) under a separate license.  These images are provided for reference purposes only and may not hosted or redistributed by you.
 
-## How to Contribute
+## Contributing
 
-This is an open source project. See [CONTRIBUTING](https://github.com/oracle/oce-react-gallery-sample/blob/main/CONTRIBUTING.md) for details.
+This project welcomes contributions from the community. Before submitting a pull
+request, please [review our contribution guide](./CONTRIBUTING.md).
+
+## Security
+
+Please consult the [security guide](./SECURITY.md) for our responsible security
+vulnerability disclosure process.
 
 ## License
 
-Copyright (c) 2020, 2021 Oracle and/or its affiliates and released under the
-[Universal Permissive License (UPL)](https://oss.oracle.com/licenses/upl/), Version 1.0
+Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+
+Released under the Universal Permissive License v1.0 as shown at
+<https://oss.oracle.com/licenses/upl/>.

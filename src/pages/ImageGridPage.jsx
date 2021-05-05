@@ -188,10 +188,30 @@ class ImageGridPage extends React.Component {
 
     // the HTML for rendering every item's small rendition URL
     const childElements = items.map((item, i) => {
-      const thumbnailUrl = item.renditionUrls.Small;
+      const { renditionUrls } = item;
       return (
-        <div key={thumbnailUrl} className="grid-item">
-          <img src={thumbnailUrl} key={thumbnailUrl} data-key={i} alt="Small Preview" />
+        <div key={item.id} className="grid-item">
+          {renditionUrls && (
+            <picture>
+              <source
+                type="image/webp"
+                srcSet={renditionUrls.srcset}
+                sizes="(min-width: 480px) 200px, 150px"
+              />
+              <source
+                srcSet={renditionUrls.jpgSrcset}
+                sizes="(min-width: 480px) 200px, 150px"
+              />
+              <img
+                src={renditionUrls.small}
+                loading="lazy"
+                data-key={i}
+                alt="Small Preview"
+                width={renditionUrls.width}
+                height={renditionUrls.height}
+              />
+            </picture>
+          )}
         </div>
       );
     });
@@ -211,11 +231,11 @@ class ImageGridPage extends React.Component {
           </div>
 
           <h1 className="heading">{categoryName}</h1>
-          <h4 className="subheading">
+          <h2 className="subheading">
             {totalResults}
             {' '}
             photos
-          </h4>
+          </h2>
         </div>
 
         {/* No items message */}
@@ -240,7 +260,25 @@ class ImageGridPage extends React.Component {
             <section className="slideshow-container">
               <div className="mySlides fade">
                 <div className="imgdiv">
-                  <img src={items[currentImage].renditionUrls.Native} alt="Large preview" />
+                  <picture>
+                    <source
+                      type="image/webp"
+                      srcSet={items[currentImage].renditionUrls.srcset}
+                      sizes="90vh"
+                    />
+                    <source
+                      srcSet={items[currentImage].renditionUrls.jpgSrcset}
+                      sizes="90vh"
+                    />
+                    <img
+                      src={items[currentImage].renditionUrls.large}
+                      sizes="90vh"
+                      loading="lazy"
+                      alt="Large preview"
+                      width={items[currentImage].renditionUrls.width}
+                      height={items[currentImage].renditionUrls.height}
+                    />
+                  </picture>
                   <div className="numbertext">
                     {currentImage + 1}
                     {' '}

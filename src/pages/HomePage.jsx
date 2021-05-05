@@ -60,7 +60,7 @@ class HomePage extends React.Component {
       return <div className="progress-spinner" />;
     }
 
-    const { categories, itemsThumbnailURLMap } = data;
+    const { categories } = data;
 
     return (
       <div>
@@ -73,7 +73,6 @@ class HomePage extends React.Component {
               <Gallery
                 key={category.id}
                 category={category}
-                itemsThumbnailURLMap={itemsThumbnailURLMap}
               />
             ))}
         </div>

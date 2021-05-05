@@ -15,7 +15,7 @@ import PropTypes from 'prop-types';
  * @param itemsThumbnailURLMap map of itemID to thumbnail URL
  */
 const Gallery = (props) => {
-  const { category, itemsThumbnailURLMap } = props;
+  const { category } = props;
   const { items, totalResults } = category;
 
   return (
@@ -31,9 +31,29 @@ const Gallery = (props) => {
         {/* Images for the category */}
         <div className="gallery">
           {items.map(
-            (item) => (
+            (item, index) => (
               <div key={item.id} className="item fade">
-                <img src={itemsThumbnailURLMap.get(item.id)} alt={item.name} className="cover" />
+                {item.renditionUrls && (
+                  <picture>
+                    <source
+                      type="image/webp"
+                      srcSet={item.renditionUrls.srcset}
+                      sizes={index === 0 ? '230px' : '75px'}
+                    />
+                    <source
+                      srcSet={item.renditionUrls.jpgSrcset}
+                      sizes={index === 0 ? '230px' : '75px'}
+                    />
+                    <img
+                      src={item.renditionUrls.small}
+                      className="cover"
+                      loading="lazy"
+                      alt={item.name}
+                      width={item.renditionUrls.width}
+                      height={item.renditionUrls.height}
+                    />
+                  </picture>
+                )}
               </div>
             ),
           )}
@@ -41,12 +61,12 @@ const Gallery = (props) => {
 
         {/* Category Name and total number of items in that category */}
         <div className="caption">
-          <h3>{category.name}</h3>
-          <h4>
+          <h2>{category.name}</h2>
+          <h3>
             {totalResults}
             {' '}
             photos
-          </h4>
+          </h3>
         </div>
 
       </Link>
@@ -61,7 +81,6 @@ Gallery.propTypes = {
     items: PropTypes.arrayOf(PropTypes.shape({})),
     totalResults: PropTypes.number,
   }).isRequired,
-  itemsThumbnailURLMap: PropTypes.instanceOf(Map).isRequired,
 };
 
 export default Gallery;

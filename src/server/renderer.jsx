@@ -46,6 +46,7 @@ export default (req, context) => {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="Sample gallery app created in React that utilizes the content sdk library">
 
         <title>Image Gallery - React</title>
         <link rel="icon" href="${favIconFile}" type="image/png">
@@ -57,8 +58,8 @@ export default (req, context) => {
         <div id="root">${content}</div>
         <script>
           window.INITIAL_DATA = ${serialize(context.data)}
-        </script> 
-        <script src="${clientBundleFile}"></script>   
+        </script>
+        <script src="${clientBundleFile}"></script>
       </body>
     </html>
   `;
