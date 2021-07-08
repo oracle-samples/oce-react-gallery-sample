@@ -1,14 +1,14 @@
+/* eslint-disable no-param-reassign */
 /**
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
-/* eslint-disable no-param-reassign */
-
-import getDeliveryClient from './server-config-utils';
+import getClient from './server-config-utils';
+import getImageUrl from './utils';
 
 /**
  * This file contains a number of utility methods used to obtain data
- * from the server using the ContentSDK JavaScript Library.
+ * from the server using the Oracle Content SDK JavaScript Library.
  */
 
 /* ----------------------------------------------------
@@ -57,7 +57,7 @@ function addRendition(urls, rendition, formatstr) {
   // Get the webp format field
   const format = rendition.formats.filter((item) => item.format === `${formatstr}`)[0];
   const self = format.links.filter((item) => item.rel === 'self')[0];
-  const url = self.href;
+  const url = getImageUrl(self.href);
   const { width } = format.metadata;
 
   // Also save the jpg format so that it can be used as a default value for images
@@ -101,7 +101,7 @@ function getSourceSet(asset) {
 /**
  * Fetch the items that belong to the category whose id is specified.
  *
- * @param {DeliveryClient} client - he delivery client to get data from OCE content
+ * @param {DeliveryClient} client - he delivery client to get data from Oracle Content
  * @param {string} categoryId - if of the category whose items are to be obtained
  * @param {boolean} limit - true when only 4 items are to be returned,
  *                          otherwise false to get 100 items
@@ -121,7 +121,7 @@ function fetchItemsForCategory(client, categoryId, limit) {
 /**
  * Fetch the categories for the specified taxonomyId.
  *
- * @param {DeliveryClient} client - the delivery client to get data from OCE content
+ * @param {DeliveryClient} client - the delivery client to get data from Oracle Content
  * @param {string} taxonomyId - the id of the taxonomy whose categories are to be obtained
  * @returns {Promise({Object})} - A Promise containing the data
  */
@@ -137,7 +137,7 @@ function fetchCategoriesForTaxonomyId(client, taxonomyId) {
 /**
  * Return a list of categories for all of taxonomies.
  *
- * @param {DeliveryClient} client - the delivery client to get data from OCE content
+ * @param {DeliveryClient} client - the delivery client to get data from Oracle Content
  * @returns {Promise({Object})} - A Promise containing the data
  */
 function fetchAllTaxonomiesCategories(client) {
@@ -170,7 +170,7 @@ function fetchAllTaxonomiesCategories(client) {
  * Takes a list of categories, and returns an updated array where each
  * category has an array of its items added to it.
  *
- * @param {DeliveryClient} client - the delivery client to get data from OCE content
+ * @param {DeliveryClient} client - the delivery client to get data from Oracle Content
  * @param {Array} categories - the list of categories which is to have the items
  *                             for each category added to it
  * @returns {Promise({Object})} - A Promise containing the data
@@ -222,7 +222,7 @@ function addItemsToCategories(client, categories) {
  * @returns {Promise({Object})} - A Promise containing the data
  */
 export function getHomePageData() {
-  const deliveryClient = getDeliveryClient();
+  const deliveryClient = getClient();
   // get the categories for all taxonomies then add all the category items to each category
   return fetchAllTaxonomiesCategories(deliveryClient).then(
     (initialCategories) => addItemsToCategories(deliveryClient, initialCategories).then(
@@ -256,7 +256,7 @@ export function getHomePageData() {
  * @returns {Promise({Object})} - A Promise containing the data
  */
 export function getImageGridPageData(categoryId) {
-  const client = getDeliveryClient();
+  const client = getClient();
 
   return fetchItemsForCategory(client, categoryId, false).then(
     (topLevelItem) => {

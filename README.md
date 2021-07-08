@@ -1,6 +1,6 @@
 # About React Image Gallery Sample
 
-This repository holds the sample source code for a ReactJS implementation of an image gallery site powered by Oracle Content and Experience.
+This repository holds the sample source code for a ReactJS implementation of an image gallery site powered by Oracle Content Management.
 
 Please see the [complete tutorial](https://www.oracle.com/pls/topic/lookup?ctx=cloud&id=oce-react-gallery-sample) and [live demo](https://headless.mycontentdemo.com/samples/oce-react-gallery-sample).
 
@@ -46,7 +46,7 @@ and then open <http://localhost:8080>.
 
 ## Images
 
-Sample images may be downloaded from [https://www.oracle.com/middleware/technologies/content-experience-downloads.html](https://www.oracle.com/middleware/technologies/content-experience-downloads.html) under a separate license.  These images are provided for reference purposes only and may not hosted or redistributed by you.
+Sample images may be downloaded from [https://www.oracle.com/middleware/technologies/content-experience-downloads.html](https://www.oracle.com/middleware/technologies/content-experience-downloads.html) under a separate license.  These images are provided for reference purposes only and may not be hosted or redistributed by you.
 
 ## Contributing
 
