@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
@@ -8,6 +8,7 @@
  */
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
+const sdkPackage = require('./node_modules/@oracle/content-management-sdk/package.json');
 
 // config() will read the .env file, parse the contents, assign it to process.env
 require('dotenv').config();
@@ -27,6 +28,9 @@ if (process.env.BASE_URL) {
     BASE_URL = BASE_URL.substr(0, BASE_URL.length - 1);
   }
 }
+
+const BUILD_TAG = process.env.BUILD_TAG || 'none';
+const SDK_VERSION = sdkPackage.version;
 
 module.exports = {
   output: {
@@ -67,16 +71,11 @@ module.exports = {
     // define variables to be used in the application, this is used for the routers basename
     new webpack.DefinePlugin({
       'process.env.BASE_URL': JSON.stringify(BASE_URL),
-      'process.env.PREVIEW': JSON.stringify(process.env.PREVIEW),
-      'process.env.AUTH': JSON.stringify(process.env.AUTH),
-      'process.env.EXPRESS_SERVER_PORT': JSON.stringify(process.env.EXPRESS_SERVER_PORT),
+      'process.env.BUILD_TAG': JSON.stringify(BUILD_TAG),
+      'process.env.SDK_VERSION': JSON.stringify(SDK_VERSION),
       'process.env.SERVER_URL': JSON.stringify(process.env.SERVER_URL),
       'process.env.API_VERSION': JSON.stringify(process.env.API_VERSION),
       'process.env.CHANNEL_TOKEN': JSON.stringify(process.env.CHANNEL_TOKEN),
-      'process.env.CLIENT_ID': JSON.stringify(process.env.CLIENT_ID),
-      'process.env.CLIENT_SECRET': JSON.stringify(process.env.CLIENT_SECRET),
-      'process.env.CLIENT_SCOPE_URL': JSON.stringify(process.env.CLIENT_SCOPE_URL),
-      'process.env.IDCS_URL': JSON.stringify(process.env.IDCS_URL)
     }),
   ],
 

@@ -1,4 +1,4 @@
-# About React Image Gallery Sample
+# About React Image Gallery
 
 This repository holds the sample source code for a ReactJS implementation of an image gallery site powered by Oracle Content Management.
 
@@ -60,7 +60,7 @@ vulnerability disclosure process.
 
 ## License
 
-Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 
 Released under the Universal Permissive License v1.0 as shown at
 <https://oss.oracle.com/licenses/upl/>.

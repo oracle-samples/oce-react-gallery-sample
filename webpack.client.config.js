@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
@@ -43,6 +43,28 @@ const config = {
       'process.env.IS_BROWSER': true,
     }),
   ],
+  externals: {
+    'node:buffer': '{}',
+    'node:fs': '{}',
+    'node:http': '{}',
+    'node:https': '{}',
+    'node:path': '{}',
+    'node:process': '{}',
+    'node:stream': '{}',
+    'node:stream/web': '{}',
+    'node:url': '{}',
+    'node:util': '{}',
+    'node:worker_threads': '{}',
+    'node:zlib': '{}',
+  },
+  resolve: {
+    fallback: {
+      fs: false,
+      path: false,
+      url: false,
+      events: false,
+    },
+  },
 };
 
 // merge the base config and this config together to produce the full client config

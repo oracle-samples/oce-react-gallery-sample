@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
@@ -34,12 +34,13 @@ const config = {
   // Node can get the dependencies from node_modules on start up therefore they do not
   // have to be in the bundle
   // (unlike with the client bundle which has to have all the dependencies in it)
-  externals: [webpackNodeExternals()],
+  externals: [webpackNodeExternals(),
+    'react-helmet'],
 
   plugins: [
     new webpack.DefinePlugin({
-      'process.env.IS_BROWSER': false,
-    }),
+      'process.env.IS_BROWSER': false
+    })
   ],
 };
 

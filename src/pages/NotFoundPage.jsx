@@ -15,6 +15,10 @@ const NotFoundPage = ({ staticContext = {} }) => {
   return <h1 className="error">Sorry, the page you are requesting has not been found.</h1>;
 };
 
+export default {
+  component: NotFoundPage,
+};
+
 NotFoundPage.propTypes = {
   staticContext: PropTypes.shape({
     notFound: PropTypes.string,
@@ -24,5 +28,3 @@ NotFoundPage.propTypes = {
 NotFoundPage.defaultProps = {
   staticContext: {},
 };
-
-export default NotFoundPage;

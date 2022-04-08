@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
@@ -13,12 +13,14 @@
 import 'core-js'; // replacement for babel-polyfill in babel 7.4 & above
 import 'regenerator-runtime/runtime'; // replacement for babel-polyfill in babel 7.4 & above
 import express from 'express';
-import { matchPath } from 'react-router-dom';
+// If we don't import Switch, then the routing fails due to code in react-router-config
+// that references router.Switch
+// eslint-disable-next-line no-unused-vars
+import { matchPath, Switch } from 'react-router-dom';
 import http from 'http';
 import https from 'https';
 import Routes from '../pages/Routes';
 import renderer from './renderer';
-import { getAuthValue, isAuthNeeded } from '../scripts/server-config-utils';
 
 /*
  * Create an instance of an Express server
@@ -88,16 +90,9 @@ function handleContentRequest(req, res, authValue) {
  *
  * See the following files where proxying is setup
  * - 'src/scripts/server-config-utils.getClient' for the code proxying requests for content
- * - 'src/scripts/utils.getImageUrl' for the code proxying requests for image binaries
  */
 server.use('/content/', (req, res) => {
-  if (isAuthNeeded()) {
-    getAuthValue().then((authValue) => {
-      handleContentRequest(req, res, authValue);
-    });
-  } else {
-    handleContentRequest(req, res, '');
-  }
+  handleContentRequest(req, res, '');
 });
 
 /*
@@ -112,7 +107,6 @@ server.get('*', (req, res) => {
 
   promise.then((data) => {
     const context = { data, requestQueryParams: req.query };
-
     // get the content to return to the client
     const content = renderer(req, context);
 
@@ -130,7 +124,7 @@ server.get('*', (req, res) => {
 /*
  * Set the port the Express server is listening on
  */
-const port = process.env.EXPRESS_SERVER_PORT || 8080;
+const port = process.env.PORT || 8080;
 server.listen(port, () => {
   console.log(`Application is accesssible on : http://localhost:${port}`);
 });
