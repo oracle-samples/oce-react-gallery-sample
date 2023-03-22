@@ -4,9 +4,9 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 import React from 'react';
-import PropTypes, { number } from 'prop-types';
+import { useParams, useSearchParams } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import backImage from '../assets/back.png';
-import { getImageGridPageData } from '../scripts/services';
 
 /**
  * This component displays the assets belonging to a category in a grid view.
@@ -15,80 +15,41 @@ import { getImageGridPageData } from '../scripts/services';
  * @param categoryId the id of the category whose items are to be displayed
  * @param categoryName the name of the category whose items are to be displayed
  */
-class ImageGridPage extends React.Component {
+export default function ImageGridPage({ fetchInitialData, serverData, title }) {
+  const [data, setData] = React.useState(() => {
+    let ret;
+    if (process.env.IS_BROWSER) {
+      ret = window.INITIAL_DATA;
+      delete window.INITIAL_DATA;
+    } else {
+      ret = serverData;
+    }
+    return ret;
+  });
+  const [currentImage, setCurrentImage] = React.useState(-1);
+  const prevCounterRef = React.useRef();
+  React.useEffect(() => {
+    prevCounterRef.current = currentImage;
+  });
+  const [loading, setLoading] = React.useState(!data);
+  const fetchNewData = React.useRef(!data);
+  const { categoryId } = useParams();
+  const [searchParams] = useSearchParams();
+  const categoryName = process.env.IS_BROWSER ? searchParams.get('categoryName') : '';
+
   /**
-   * static method to handle back button being clicked
-   * to go back to the main page
-   */
-  static handleBack(e) {
+  * static method to handle back button being clicked
+  * to go back to the main page
+  */
+  function handleBack(e) {
     e.preventDefault();
     window.history.back();
-  }
-
-  constructor(props) {
-    super(props);
-
-    let data;
-    let categoryName;
-    if (process.env.IS_BROWSER) {
-      data = window.INITIAL_DATA;
-      delete window.INITIAL_DATA;
-
-      const { location } = this.props;
-      const params = new URLSearchParams(location.search);
-      categoryName = params.get('categoryName');
-    } else {
-      const { staticContext } = this.props;
-      data = staticContext.data;
-      categoryName = staticContext.requestQueryParams.categoryName;
-    }
-
-    this.state = {
-      data,
-      loading: !data,
-      currentImage: -1, // the index of the image currently being rendered
-      categoryName,
-    };
-  }
-
-  // executed client side only
-  componentDidMount() {
-    const { categoryName } = this.state;
-    document.title = categoryName;
-
-    const { data } = this.state;
-    if (!data) {
-      const { match } = this.props;
-      this.fetchData(match.params.categoryId);
-    }
-
-    // add event listener for keydown for navigating through large view of images
-    document.addEventListener('keydown', (e) => this.handleKeypressFunction(e), false);
-  }
-
-  // called when any of the component's properties changes
-  // if the properties have changed, reload the data
-  // (i.e. we could be viewing the items of a new category)
-  componentDidUpdate(prevProps) {
-    const { match } = this.props;
-
-    if (prevProps.match.params.categoryId !== match.params.categoryId) {
-      this.fetchData(match.params.categoryId);
-    }
-  }
-
-  /*
-   * Called when the component unmounts.
-   * Unregister the keydown event listener
-   */
-  componentWillUnmount() {
-    document.removeEventListener('keydown', (e) => this.handleKeypressFunction(e), false);
   }
 
   /**
    * Handle click on the grid item. Sets the current image on the state.
    */
-  handleClick(event) {
+  function handleClick(event) {
     const imageClicked = event.target.getAttribute('data-key');
     if (!imageClicked) {
       return; // check for null image. This may be null when you click on empty white space
@@ -96,47 +57,22 @@ class ImageGridPage extends React.Component {
 
     const el = document.getElementsByTagName('body');
     el[0].classList.add('modal-open');
-    this.setState({
-      currentImage: parseInt(imageClicked, 10),
-    });
-  }
-
-  /**
-   * Handle Keypress events. If the left arrow or right arrow key is pressed,
-   * adjust the slideshow accordingly. If esc is pressed, exit slideshow mode.
-   */
-  handleKeypressFunction(e) {
-    const { currentImage } = this.state;
-    if (currentImage === -1) {
-      return;
-    }
-
-    if (e.keyCode === 37) { // left arrow
-      this.handlePrevNextClick(e, false);
-    } else if (e.keyCode === 39) { // right arrow
-      this.handlePrevNextClick(e, true);
-    } else if (e.keyCode === 27) { // esc key
-      this.handleCloseClick(e);
-    }
+    setCurrentImage(parseInt(imageClicked, 10));
   }
 
   /**
    * Handle clicks on the prev/next buttons. If its on the first item
    * or last item, don't do anything on the prev or next respectively
    */
-  handlePrevNextClick(e, increment) {
-    const { currentImage } = this.state;
-    const { totalResults } = this.props;
+  function handlePrevNextClick(e, increment) {
+    const { totalResults } = data;
 
     e.preventDefault();
     if ((currentImage === 0 && !increment)
         || (currentImage === totalResults - 1 && increment)) {
       return;
     }
-
-    this.setState({
-      currentImage: increment ? currentImage + 1 : currentImage - 1,
-    });
+    setCurrentImage(increment ? currentImage + 1 : currentImage - 1);
   }
 
   /**
@@ -144,228 +80,214 @@ class ImageGridPage extends React.Component {
    * Remove the modal-open class from the body so that scrollbars can
    * work again.
    */
-  handleCloseClick(e) {
+  function handleCloseClick(e) {
     e.preventDefault();
     const el = document.getElementsByTagName('body');
     el[0].classList.remove('modal-open');
-    this.setState({
-      currentImage: -1,
-    });
+    setCurrentImage(-1);
   }
 
-  // Client Side Data Fetching: called from Client when doing client side routing/hydration
-  fetchData(categoryId) {
-    this.setState(() => ({
-      loading: true,
-    }));
+  React.useEffect(() => {
+    document.title = title;
+  }, [title]);
 
-    getImageGridPageData(categoryId)
-      .then((data) => this.setState(() => ({
-        data,
-        loading: false,
-      })));
-  }
+  React.useEffect(() => {
+    if (fetchNewData.current === true) {
+      setLoading(true);
 
-  /*
-   * Render the component
-   */
-  render() {
-    const {
-      loading, data, currentImage, categoryName,
-    } = this.state;
-
-    if (loading === true) {
-      return <div className="progress-spinner" />;
+      fetchInitialData(categoryId)
+        .then((results) => {
+          setData(results);
+          setLoading(false);
+        });
+    } else {
+      fetchNewData.current = true;
     }
+  }, [categoryId, fetchNewData]);
 
-    const { items, totalResults } = data;
+  /**
+   * Handle Keypress events. If the left arrow or right arrow key is pressed,
+   * adjust the slideshow accordingly. If esc is pressed, exit slideshow mode.
+   */
+  React.useEffect(() => {
+    function onKeyDown(e) {
+      const count = prevCounterRef.current;
+      if (count === -1) {
+        return;
+      }
+      const decrement = e.keyCode === 37;
+      const increment = e.keyCode === 39;
+      const { totalResults } = data;
+      if ((count === 0 && decrement)
+          || (count === totalResults - 1 && increment)) {
+        return;
+      }
+      if (e.keyCode === 37) { // left arrow
+        setCurrentImage(count - 1);
+      } else if (e.keyCode === 39) { // right arrow
+        setCurrentImage(count + 1);
+      } else if (e.keyCode === 27) { // esc key
+        handleCloseClick(e);
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [data]);
 
-    // class names for the next/previous buttons
-    const hidePrev = currentImage === 0;
-    const hideNext = currentImage === totalResults - 1;
-    const prevClassName = `prev${hidePrev ? ' hidden' : ''}`;
-    const nextClassName = `next${hideNext ? ' hidden' : ''}`;
+  if (loading) {
+    return <div className="progress-spinner" />;
+  }
+  const { items, totalResults } = data;
 
-    // the HTML for rendering every item's small rendition URL
-    const childElements = items.map((item, i) => {
-      const { renditionUrls } = item;
-      return (
-        <div key={item.id} className="grid-item">
-          {renditionUrls && (
-            <picture>
-              <source
-                type="image/webp"
-                srcSet={renditionUrls.srcset}
-                sizes="(min-width: 480px) 200px, 150px"
-              />
-              <source
-                srcSet={renditionUrls.jpgSrcset}
-                sizes="(min-width: 480px) 200px, 150px"
-              />
-              <img
-                src={renditionUrls.small}
-                loading="lazy"
-                data-key={i}
-                alt="Small Preview"
-                width={renditionUrls.width}
-                height={renditionUrls.height}
-              />
-            </picture>
-          )}
-        </div>
-      );
-    });
+  // class names for the next/previous buttons
+  const hidePrev = currentImage === 0;
+  const hideNext = currentImage === totalResults - 1;
+  const prevClassName = `prev${hidePrev ? ' hidden' : ''}`;
+  const nextClassName = `next${hideNext ? ' hidden' : ''}`;
 
+  // the HTML for rendering every item's small rendition URL
+  const childElements = items.map((item, i) => {
+    const { renditionUrls } = item;
     return (
+      <div key={item.id} className="grid-item">
+        {renditionUrls && (
+          <picture>
+            <source
+              type="image/webp"
+              srcSet={renditionUrls.srcset}
+              sizes="(min-width: 480px) 200px, 150px"
+            />
+            <source
+              srcSet={renditionUrls.jpgSrcset}
+              sizes="(min-width: 480px) 200px, 150px"
+            />
+            <img
+              src={renditionUrls.small}
+              loading="lazy"
+              data-key={i}
+              alt="Small Preview"
+              width={renditionUrls.width}
+              height={renditionUrls.height}
+            />
+          </picture>
+        )}
+      </div>
+    );
+  });
+
+  return (
+    <div>
       <div>
-        <div>
+        <div
+          className="back"
+          onClick={handleBack}
+          onKeyDown={handleBack}
+          role="button"
+          tabIndex="0"
+        >
+          <img src={backImage} alt="Navigate back to Home" />
+          <span>Home</span>
+        </div>
+
+        <h1 className="heading">{categoryName}</h1>
+        <h2 className="subheading" data-totalResults={totalResults}>
+          {totalResults}
+          {' '}
+          photos
+        </h2>
+      </div>
+
+      {/* No items message */}
+      {items.length === 0
+      && <div className="message">There are no images in this category.</div>}
+
+      {/* Grid of images */}
+      {items.length > 0
+      && (
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+        <div
+          className="grid"
+          onClick={(e) => handleClick(e)}
+        >
+          {childElements}
+        </div>
+      )}
+
+      {/* Image preview overlaid ontop of grid of images */}
+      {items.length > 0 && currentImage !== -1 && (
+        <div className="page-container">
+          <section className="slideshow-container">
+            <div className="mySlides fade">
+              <div className="imgdiv">
+                <picture>
+                  <source
+                    type="image/webp"
+                    srcSet={items[currentImage].renditionUrls.srcset}
+                    sizes="90vh"
+                  />
+                  <source
+                    srcSet={items[currentImage].renditionUrls.jpgSrcset}
+                    sizes="90vh"
+                  />
+                  <img
+                    src={items[currentImage].renditionUrls.large}
+                    sizes="90vh"
+                    loading="lazy"
+                    alt="Large preview"
+                    width={items[currentImage].renditionUrls.width}
+                    height={items[currentImage].renditionUrls.height}
+                  />
+                </picture>
+                <div className="numbertext">
+                  {currentImage + 1}
+                  {' '}
+                  /
+                  {' '}
+                  {totalResults}
+                </div>
+              </div>
+            </div>
+          </section>
+
           <div
-            className="back"
-            onClick={ImageGridPage.handleBack}
-            onKeyDown={ImageGridPage.handleBack}
+            className={prevClassName}
+            onClick={(e) => handlePrevNextClick(e, false)}
+            onKeyDown={(e) => handlePrevNextClick(e, false)}
             role="button"
             tabIndex="0"
           >
-            <img src={backImage} alt="Navigate back to Home" />
-            <span>Home</span>
+            &#10094;
           </div>
 
-          <h1 className="heading">{categoryName}</h1>
-          <h2 className="subheading">
-            {totalResults}
-            {' '}
-            photos
-          </h2>
-        </div>
-
-        {/* No items message */}
-        {items.length === 0
-        && <div className="message">There are no images in this category.</div>}
-
-        {/* Grid of images */}
-        {items.length > 0
-        && (
-          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
           <div
-            className="grid"
-            onClick={(e) => this.handleClick(e)}
+            className={nextClassName}
+            onClick={(e) => handlePrevNextClick(e, true)}
+            onKeyDown={(e) => handlePrevNextClick(e, true)}
+            role="button"
+            tabIndex="0"
           >
-            {childElements}
+            &#10095;
           </div>
-        )}
 
-        {/* Image preview overlaid ontop of grid of images */}
-        {items.length > 0 && currentImage !== -1 && (
-          <div className="page-container">
-            <section className="slideshow-container">
-              <div className="mySlides fade">
-                <div className="imgdiv">
-                  <picture>
-                    <source
-                      type="image/webp"
-                      srcSet={items[currentImage].renditionUrls.srcset}
-                      sizes="90vh"
-                    />
-                    <source
-                      srcSet={items[currentImage].renditionUrls.jpgSrcset}
-                      sizes="90vh"
-                    />
-                    <img
-                      src={items[currentImage].renditionUrls.large}
-                      sizes="90vh"
-                      loading="lazy"
-                      alt="Large preview"
-                      width={items[currentImage].renditionUrls.width}
-                      height={items[currentImage].renditionUrls.height}
-                    />
-                  </picture>
-                  <div className="numbertext">
-                    {currentImage + 1}
-                    {' '}
-                    /
-                    {' '}
-                    {totalResults}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <div
-              className={prevClassName}
-              onClick={(e) => this.handlePrevNextClick(e, false)}
-              onKeyDown={(e) => this.handlePrevNextClick(e, false)}
-              role="button"
-              tabIndex="0"
-            >
-              &#10094;
-            </div>
-
-            <div
-              className={nextClassName}
-              onClick={(e) => this.handlePrevNextClick(e, true)}
-              onKeyDown={(e) => this.handlePrevNextClick(e, true)}
-              role="button"
-              tabIndex="0"
-            >
-              &#10095;
-            </div>
-
-            <div
-              className="close"
-              onClick={(e) => this.handleCloseClick(e, true)}
-              onKeyDown={(e) => this.handleCloseClick(e, true)}
-              role="button"
-              tabIndex="0"
-            >
-              X
-            </div>
-
+          <div
+            className="close"
+            onClick={(e) => handleCloseClick(e, true)}
+            onKeyDown={(e) => handleCloseClick(e, true)}
+            role="button"
+            tabIndex="0"
+          >
+            X
           </div>
-        )}
 
-      </div>
-    );
-  }
+        </div>
+      )}
+
+    </div>
+  );
 }
-
-// Server Side Data Fetching: called from Express server when sending HTML to client
-function fetchInitialData(req) {
-  return getImageGridPageData(req.path.split('/').pop());
-}
-
-export default {
-  fetchInitialData,
-  component: ImageGridPage,
-};
 
 ImageGridPage.propTypes = {
-  totalResults: number,
-
-  staticContext: PropTypes.shape({
-    data: PropTypes.shape({}),
-    requestQueryParams: PropTypes.shape({
-      categoryName: PropTypes.string,
-    }),
-  }),
-
-  match: PropTypes.shape({
-    params: PropTypes.shape({
-      categoryId: PropTypes.string,
-    }),
-  }).isRequired,
-
-  location: PropTypes.shape({
-    search: PropTypes.string,
-  }).isRequired,
-
-  route: PropTypes.shape({
-    queryParams: PropTypes.shape({
-      categoryName: PropTypes.string,
-    }),
-  }).isRequired,
-};
-
-ImageGridPage.defaultProps = {
-  totalResults: -1,
-  staticContext: {},
+  fetchInitialData: PropTypes.func.isRequired,
+  serverData: PropTypes.shape().isRequired,
+  title: PropTypes.string.isRequired,
 };

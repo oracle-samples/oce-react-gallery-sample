@@ -16,10 +16,10 @@ import express from 'express';
 // If we don't import Switch, then the routing fails due to code in react-router-config
 // that references router.Switch
 // eslint-disable-next-line no-unused-vars
-import { matchPath, Switch } from 'react-router-dom';
+import { matchPath } from 'react-router-dom';
 import http from 'http';
 import https from 'https';
-import Routes from '../pages/Routes';
+import routes from '../pages/Routes';
 import renderer from './renderer';
 
 /*
@@ -99,23 +99,15 @@ server.use('/content/', (req, res) => {
  * Create a single route handler to listen to all (*) routes of our application
  */
 server.get('*', (req, res) => {
-  const activeRoute = Routes.find((route) => matchPath(req.url, route)) || {};
+  const activeRoute = routes.find((route) => matchPath(route.path, req.url)) || {};
 
   const promise = activeRoute.fetchInitialData
-    ? activeRoute.fetchInitialData(req)
+    ? activeRoute.fetchInitialData(req.path)
     : Promise.resolve();
 
   promise.then((data) => {
-    const context = { data, requestQueryParams: req.query };
     // get the content to return to the client
-    const content = renderer(req, context);
-
-    // if the route requested was not found, the content object will have its "notFound"
-    // property set, therefore we need to change the response code to a 404, not found
-    if (context.notFound) {
-      res.status(404);
-    }
-
+    const content = renderer(req, data);
     // send the response
     res.send(content);
   });

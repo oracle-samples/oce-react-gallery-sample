@@ -26,26 +26,6 @@ function logError(message, error) {
 }
 
 /**
- * Flattens an array of arrays into a single array.
- *
- * Note:  ES6's array.flat() is not supported in Node pre version 11 so flatten manually.
- *
- * @param {Array} inArray - the array of arrays to flatten
- * @param {Array} result - the flattened array
- */
-function flattenArray(inArray, result = []) {
-  for (let i = 0, { length } = inArray; i < length; i += 1) {
-    const arrayElement = inArray[i];
-    if (Array.isArray(arrayElement)) {
-      flattenArray(arrayElement, result);
-    } else {
-      result.push(arrayElement);
-    }
-  }
-  return result;
-}
-
-/**
  * Private method for adding the specified format rendition to the rendition string
  *
  * @param {Object} url - the url which contains the rendition strings
@@ -160,7 +140,7 @@ function fetchAllTaxonomiesCategories(client) {
       // of the categories for all of the taxonomies (note: no taxonomy information)
       // is returned.
       return Promise.all(promises)
-        .then((arrayOfCategoryArray) => flattenArray(arrayOfCategoryArray));
+        .then((arrayOfCategoryArray) => arrayOfCategoryArray.flat());
     })
     .catch((error) => logError('Fetching taxonomies failed', error));
 }
@@ -208,7 +188,7 @@ function addItemsToCategories(client, categories) {
   });
 
   // execute all the promises before returning the data
-  return Promise.all(promises).then((arrayOfItems) => flattenArray(arrayOfItems));
+  return Promise.all(promises).then((arrayOfItems) => arrayOfItems.flat());
 }
 
 /**
@@ -229,7 +209,7 @@ export function getHomePageData() {
         // pull out all of the items for all of the categories then
         // append the computed renditionUrls to each item.
         const allItems = categories.map((category) => category.items);
-        const items = flattenArray(allItems);
+        const items = allItems.flat();
         // for each item, retrieve the rendition urls and add it to the item
         items.forEach((item) => {
           item.renditionUrls = getSourceSet(item);

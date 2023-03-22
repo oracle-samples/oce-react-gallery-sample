@@ -8,25 +8,21 @@
  */
 import HomePage from './HomePage';
 import ImageGridPage from './ImageGridPage';
-import NotFoundPage from './NotFoundPage';
+import { getHomePageData, getImageGridPageData } from '../scripts/services';
 
-export default [
+const routes = [
   {
-    ...HomePage,
     path: '/',
-    exact: true,
+    component: HomePage,
+    fetchInitialData: () => getHomePageData(),
     title: 'Image Gallery',
   },
   {
-    ...ImageGridPage,
     path: '/category/:categoryId',
-    exact: true,
+    component: ImageGridPage,
+    fetchInitialData: (path) => getImageGridPageData(path.split('/').pop()),
     title: 'Image Grid',
   },
-  {
-    ...NotFoundPage,
-    path: '*',
-    exact: false,
-    title: 'Page Not Found',
-  },
 ];
+
+export default routes;
