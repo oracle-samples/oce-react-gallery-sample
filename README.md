@@ -4,7 +4,7 @@ This repository holds the sample source code for a ReactJS implementation of an 
 
 Please see the [complete tutorial](https://www.oracle.com/pls/topic/lookup?ctx=cloud&id=oce-react-gallery-sample) and [live demo](https://headless.mycontentdemo.com/samples/oce-react-gallery-sample).
 
-## Running the project
+## How to run
 
 > **NOTE:** If you need to use a proxy to reach the internet then define an oce_https_proxy environment variable:
 
